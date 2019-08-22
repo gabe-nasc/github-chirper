@@ -108,3 +108,4 @@ twitter-scraper/
 config.json/
 .vscode/
 web-scrap/
+data.json

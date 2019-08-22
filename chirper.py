@@ -5,22 +5,29 @@ import pprint as pp
 import requests
 import json
 
-def save(data):
+data = {
+    "total_commit":0,
+    "total_repos":0,
+    "last_activity":"",
+    "last_commit":{}
+}
+
+def save_data(data):
     with open("data.json", "w") as file:
         json.dump(data, file)
         
-def load():
+def load_data():
     with open("data.json", "r") as file:
-        json.loads(file.read)
+        return json.loads(file.read())    
+    
 
 def get_configs():
     with open("config.json") as settings:
         secret = json.loads(settings.read())
         return secret
 
-if __name__ == "__main__":    
-    secret = get_configs()
-    user_page = "https://github.com/{}".format(secret["github_user"])
+def get_data(user, data):
+    user_page = "https://github.com/{}".format(user)
 
     loaded_page = requests.get(user_page)
     if loaded_page.status_code != 200:
@@ -28,43 +35,37 @@ if __name__ == "__main__":
 
     profile_soup = BeautifulSoup(loaded_page.text, 'html.parser')
 
-    # ----
     commit_section = profile_soup.find_all("li", class_="ml-0 py-1")
     commit_repos = [BeautifulSoup(str(i), 'html.parser').find("a") for i in commit_section]
-
-    log = {
-        'last_activity':'', # Date
-        'last_commit':{},
-        'new_repos':[]# Repository, Last Commit tweeted
-    }
+    
     for a in commit_repos:
-        filtered_url = "https://github.com{}/commits?author={}".format(a["href"], secret["github_user"])
+        filtered_url = "https://github.com{}/commits?author={}".format(a["href"], user)
         commits_page = requests.get(filtered_url)
 
         last_commit = BeautifulSoup(commits_page.text, 'html.parser').find("a", class_="message js-navigation-open")["href"]
+        
         commit_date = BeautifulSoup(commits_page.text, 'html.parser').find("relative-time")["datetime"]
         commit_date = datetime.strptime(commit_date, "%Y-%m-%dT%H:%M:%SZ")
 
-        if log["last_activity"] == '' or log["last_activity"] < commit_date:
-            log["last_activity"] = commit_date
+        if data["last_activity"] == '' or data["last_activity"] < commit_date:
+            data["last_activity"] = commit_date
 
         last_commit_page = "https://github.com{}".format(last_commit)
-        # print(last_commit_page.split('/'))
         repo, commit = last_commit_page.split('/')[4], last_commit_page.split('/')[-1]
 
-        log['last_commit'][repo] = {'page':commit, 'date':commit_date}
+        data['last_commit'][repo] = {'hash':commit, 'date':str(commit_date)}
 
-    pp.pprint(log)
+    data["last_activity"] = str(commit_date)    
+    
+    return data
 
-    new_repo_section = profile_soup.find_all("a", class_="mr-2")#find_all("li", class_="d-block mt-1 py-1")
-    # new_repos = BeautifulSoup(str(commit_section), 'html.parser').find_all("a", class_="mr-2")
+if __name__ == "__main__":
+    secrets = get_configs()
+    
+    try:
+        data = load_data()    
+    except:
+        pass
 
-    # pp.pprint(new_repo_section)
-
-    # print(len(new_repos))
-    for a in new_repo_section:
-    #     print(a)
-        repo_name = a['href'].split('/')[-1]
-        full_url = "https://github.com" + a['href']
-        print("->", repo_name)
-        print("->", full_url)
+    log = get_data(secrets["github_user"], data)
+    save_data(log)
