@@ -72,7 +72,6 @@ def get_data(user):
     loaded_page = requests.get(user_page)
     if loaded_page.status_code != 200:
         print("Error", loaded_page.status_code)
-        # return None
 
     profile_soup = BeautifulSoup(loaded_page.text, 'html.parser')
 
@@ -119,6 +118,7 @@ if __name__ == "__main__":
         data = load_data()
     except:
         pass
-
+    
     get_data(secrets["github_user"])
+
     save_data(data)
