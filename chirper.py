@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 
 import pprint as pp
 import requests
+import tweepy
 import json
 import os
 
@@ -30,6 +31,15 @@ def get_configs():
         secret = json.loads(settings.read())
         return secret
 
+# Authenticate twitter app and return a api object
+def twitter_auth(secret):
+    auth = tweepy.OAuthHandler(secret["api_key"], secret["api_secret"])
+    auth.set_access_token(secret["access_token"], secret["access_token_secret"])
+
+    api = tweepy.API(auth)
+
+    return api
+
 # For each given repo returns commits made since the last tracked activity
 def check_commits(href, repo, last_activity, user):
 
@@ -47,7 +57,6 @@ def check_commits(href, repo, last_activity, user):
         last_activity = datetime.strptime(last_activity, "%Y-%m-%d %H:%M:%S")
 
     commits = []
-    repo = None
     for commit, date in zip(all_commits, commits_date):
         date = datetime.strptime(date["datetime"], "%Y-%m-%dT%H:%M:%SZ")
 
@@ -58,7 +67,7 @@ def check_commits(href, repo, last_activity, user):
 
         hash_ = commit['href'].split('/')[-1]
 
-        commits.append({'hash':hash_, 'date':str(date)})
+        commits.append({'repo':repo, 'hash':hash_, 'date':str(date), 'link':"https://github.com"+commit['href']})
 
     return commits
 
@@ -99,12 +108,12 @@ def get_data(user):
             tmp_date = last_commit_date
 
         # Update global data with updated stats
-        data["last_commit"][repo] = commits[0]
+        data["last_commit"] = commits[0]
 
         if repo not in data["last_commit"]:
             data["total_repos"] += 1
-            if commits[0] not in data["last_commit"][repo]:
-                data["total_commit"] += len(commits)
+            if commits[0]["hash"] != data["last_commit"]["repo"]:
+                data["total_commits"] += len(commits)
 
 
     # Update global data with newest activity
@@ -118,7 +127,15 @@ if __name__ == "__main__":
         data = load_data()
     except:
         pass
-    
-    get_data(secrets["github_user"])
 
+    get_data(secrets["github_user"])
     save_data(data)
+
+    twitter = twitter_auth(secrets)
+    print("This is not a drill")
+    message = '''
+        {user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}
+    '''.format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
+
+    twitter.update_status(message)
+    print("NEW ACTIVITY:\n", message)
