@@ -111,8 +111,6 @@ def get_data(user):
     # Update global data with newest activity
     data["last_activity"] = str(tmp_date)
 
-    # return data
-
 if __name__ == "__main__":
     secrets = get_configs()
 
