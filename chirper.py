@@ -29,9 +29,13 @@ def load_data():
 
 # Reads config file and return its contents
 def get_configs():
-    with open("config.json") as settings:
-        secret = json.loads(settings.read())
-        return secret
+    try:
+        with open("config.json") as settings:
+            secret = json.loads(settings.read())
+            return secret
+    except FileNotFoundError:
+        return os.environ
+
 
 # Authenticate twitter app and return a api object
 def twitter_auth(secret):
@@ -130,27 +134,25 @@ if __name__ == "__main__":
     except:
         pass
 
-    while True:
-        time.sleep(600)
-        get_data(secrets["github_user"])
-        
-        data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
-        save_data(data)
+    get_data(secrets["github_user"])
+    
+    data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
+    save_data(data)
 
-        check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
-        try:
-            commit_date = datetime.strptime(data["last_commit"]["date"], "%Y-%m-%d %H:%M:%S")
+    check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
+    try:
+        commit_date = datetime.strptime(data["last_commit"]["date"], "%Y-%m-%d %H:%M:%S")
 
-        except:
-            print("No commit since first check")
-            continue
-        
-        if check_date > commit_date:
-            print("No commit since last check at", data["last_check"])
-            continue
+    except:
+        print("No commit since first check")
+        exit()
+    
+    if check_date > commit_date:
+        print("No commit since last check at", data["last_check"])
+        exit()
 
-        twitter = twitter_auth(secrets)
-        message = "{user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}".format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
+    twitter = twitter_auth(secrets)
+    message = "{user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}".format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
 
-        twitter.update_status(message)
-        print("NEW ACTIVITY:\n", message)
+    twitter.update_status(message)
+    print("NEW ACTIVITY:\n", message)
