@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pprint as pp
 import requests
 import tweepy
+import time
 import json
 import os
 
@@ -11,7 +12,7 @@ import os
 data = {
     "total_commits":0, # Number of commits tracked
     "total_repos":0, # Number of repositories tracked
-    "last_activity":datetime.now().replace(microsecond=0), # Time and Date from last activity tracked
+    "last_activity":datetime.utcnow().replace(microsecond=0), # Time and Date from last activity tracked
     "last_commit":{} # Information about the last commit tracked in each repository
 }
 
@@ -128,14 +129,26 @@ if __name__ == "__main__":
     except:
         pass
 
-    get_data(secrets["github_user"])
-    save_data(data)
+    while True:
+        time.sleep(600)
+        get_data(secrets["github_user"])
+        save_data(data)
 
-    twitter = twitter_auth(secrets)
-    print("This is not a drill")
-    message = '''
-        {user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}
-    '''.format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
+        check_date = datetime.strptime(data["last_activity"], "%Y-%m-%d %H:%M:%S")
+        try:
+            commit_date = datetime.strptime(data["last_commit"]["date"], "%Y-%m-%d %H:%M:%S")
 
-    twitter.update_status(message)
-    print("NEW ACTIVITY:\n", message)
+        except:
+            print("No commit since last check")
+            continue
+        
+        if check_date > commit_date:
+            print("Last commit:", commit_date)
+            print("Last check:", check_date)
+            continue
+
+        twitter = twitter_auth(secrets)
+        message = "{user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}".format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
+
+        twitter.update_status(message)
+        print("NEW ACTIVITY:\n", message)
