@@ -13,7 +13,8 @@ data = {
     "total_commits":0, # Number of commits tracked
     "total_repos":0, # Number of repositories tracked
     "last_activity":datetime.utcnow().replace(microsecond=0), # Time and Date from last activity tracked
-    "last_commit":{} # Information about the last commit tracked in each repository
+    "last_commit":{}, # Information about the last commit tracked in each repository
+    "last_check":datetime.utcnow().replace(microsecond=0)
 }
 
 # Saves the data into a json
@@ -132,19 +133,20 @@ if __name__ == "__main__":
     while True:
         time.sleep(600)
         get_data(secrets["github_user"])
+        
+        data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
         save_data(data)
 
-        check_date = datetime.strptime(data["last_activity"], "%Y-%m-%d %H:%M:%S")
+        check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
         try:
             commit_date = datetime.strptime(data["last_commit"]["date"], "%Y-%m-%d %H:%M:%S")
 
         except:
-            print("No commit since last check")
+            print("No commit since first check")
             continue
         
         if check_date > commit_date:
-            print("Last commit:", commit_date)
-            print("Last check:", check_date)
+            print("No commit since last check at", data["last_check"])
             continue
 
         twitter = twitter_auth(secrets)
