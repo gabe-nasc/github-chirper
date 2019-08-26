@@ -140,7 +140,12 @@ if __name__ == "__main__":
             print("No commit since first check")
             continue
         
-        if datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S") > commit_date:
+        try:
+            last_check = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")            
+        except TypeError:
+            last_check = data["last_check"]
+
+        if  last_check > commit_date:
             data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
             
             print("No commit since last check at", data["last_check"])
