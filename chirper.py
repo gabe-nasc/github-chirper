@@ -13,7 +13,7 @@ data = {
     "total_commits":0, # Number of commits tracked
     "total_repos":0, # Number of repositories tracked
     "last_activity":datetime.utcnow().replace(microsecond=0), # Time and Date from last activity tracked
-    "last_commit":{}, # Information about the last commit tracked in each repository
+    "last_commit":{}, # Information about the last commit tracked
     "last_check":datetime.utcnow().replace(microsecond=0)
 }
 
@@ -116,9 +116,9 @@ def get_data(user):
         # Update global data with updated stats
         data["last_commit"] = commits[0]
 
-        if repo not in data["last_commit"]:
+        if repo != data["last_commit"]["repo"]:
             data["total_repos"] += 1
-            if commits[0]["hash"] != data["last_commit"]["repo"]:
+            if commits[0]["hash"] != data["last_commit"]["hash"]:
                 data["total_commits"] += len(commits)
 
 
@@ -128,11 +128,6 @@ def get_data(user):
 if __name__ == "__main__":
     secrets = get_configs()
 
-    # If it is not possible to load older data, use template
-    # try:
-    #     data = load_data()
-    # except:
-    #     pass
     while True:
         time.sleep(30)
         get_data(secrets["github_user"])
@@ -145,7 +140,7 @@ if __name__ == "__main__":
             print("No commit since first check")
             continue
         
-        if data["last_check"] > commit_date:
+        if datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S") > commit_date:
             data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
             
             print("No commit since last check at", data["last_check"])
