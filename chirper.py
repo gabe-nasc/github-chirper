@@ -135,7 +135,7 @@ if __name__ == "__main__":
         pass
 
     get_data(secrets["github_user"])
-    
+    pp.pprint(data)
     data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
     save_data(data)
 
