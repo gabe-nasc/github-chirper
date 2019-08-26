@@ -137,9 +137,7 @@ if __name__ == "__main__":
         time.sleep(30)
         get_data(secrets["github_user"])
         pp.pprint(data)
-        data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
 
-        check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
         try:
             commit_date = datetime.strptime(data["last_commit"]["date"], "%Y-%m-%d %H:%M:%S")
 
@@ -148,8 +146,14 @@ if __name__ == "__main__":
             continue
         
         if check_date > commit_date:
+            data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
+            check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
+            
             print("No commit since last check at", data["last_check"])
             continue
+
+        data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
+        check_date = datetime.strptime(data["last_check"], "%Y-%m-%d %H:%M:%S")
 
         twitter = twitter_auth(secrets)
         message = "{user} just pushed this commit ({commit}) to {repo} on Github, go check it out! {link}".format(user=secrets["github_user"], commit=data["last_commit"]["hash"][:6], link=data["last_commit"]["link"], repo=data["last_commit"]["repo"])
