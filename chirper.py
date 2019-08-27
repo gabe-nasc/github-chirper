@@ -129,7 +129,7 @@ if __name__ == "__main__":
     secrets = get_configs()
 
     while True:
-        time.sleep(30)
+        time.sleep(120)
         get_data(secrets["github_user"])
         pp.pprint(data)
 
