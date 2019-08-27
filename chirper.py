@@ -146,8 +146,7 @@ if __name__ == "__main__":
             last_check = data["last_check"]
 
         if  last_check > commit_date:
-            data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
-            
+            # data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
             print("No commit since last check at", data["last_check"])
             continue
 
