@@ -6,6 +6,7 @@ import requests
 import tweepy
 import time
 import json
+import sys
 import os
 
 # Template for how data is going to be stored
@@ -30,12 +31,23 @@ def load_data():
 # Reads config file and return its contents
 def get_configs():
     try:
-        with open("config.json") as settings:
-            secret = json.loads(settings.read())
-            return secret
-    except FileNotFoundError:
+        mode = sys.argv[1]
+    except IndexError:
+        print("No argument given, assuming local deployment...")
+        mode = '--local'
+    
+    if mode == "--local":
+        try:
+            with open("config.json") as settings:
+                secret = json.loads(settings.read())
+                return secret    
+        except FileNotFoundError:
+            print("No config file found.")
+        
+    elif mode == "--remote":
         return os.environ
-
+    else:
+        print("ERROR: Argument not recognized.")
 
 # Authenticate twitter app and return a api object
 def twitter_auth(secret):
@@ -121,7 +133,6 @@ def get_data(user):
             if commits[0]["hash"] != data["last_commit"]["hash"]:
                 data["total_commits"] += len(commits)
 
-
     # Update global data with newest activity
     data["last_activity"] = str(tmp_date)
 
@@ -129,7 +140,7 @@ if __name__ == "__main__":
     secrets = get_configs()
 
     while True:
-        time.sleep(120)
+        print("Checking for activity...")
         get_data(secrets["github_user"])
         pp.pprint(data)
 
@@ -138,6 +149,7 @@ if __name__ == "__main__":
 
         except:
             print("No commit since first check")
+            time.sleep(120)
             continue
         
         try:
@@ -148,6 +160,7 @@ if __name__ == "__main__":
         if  last_check > commit_date:
             # data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
             print("No commit since last check at", data["last_check"])
+            time.sleep(120)
             continue
 
         data["last_check"] = str(datetime.utcnow().replace(microsecond=0))
@@ -157,3 +170,4 @@ if __name__ == "__main__":
 
         twitter.update_status(message)
         print("NEW ACTIVITY:\n", message)
+        time.sleep(120)
