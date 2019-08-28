@@ -22,8 +22,9 @@ This project is still in development, feel free to make pull requests, issues or
 
 #### For a Heroku deployment:
 * First you'll need to create a Heroku app on the same folder you have this repository cloned, using the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
-* Second you'll go to your Heroku and set the *Configuration Variables* (Config Vars), they can be found on Dashboard > Settings. The variable names and values should be the same ones found in the `configs.json` that is shown on the Local Deployment setup.
+* Then you'll go to your Heroku and set the *Configuration Variables* (Config Vars), they can be found on Dashboard > Settings. The variable names and values should be the same ones found in the `configs.json` that is shown on the Local Deployment setup.
 * After that is done you should push the repository to Heroku's remote by doing `git push heroku master`
+* Lastly you'll need to run this command `heroku ps:scale worker=1` and the bot should work.
 
 ### **Warning**
 
