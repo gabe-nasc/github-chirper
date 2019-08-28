@@ -1,1 +1,1 @@
-worker: python3 chirper.py
+worker: python3 chirper.py --remote
